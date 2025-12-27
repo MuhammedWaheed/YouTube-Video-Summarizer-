@@ -107,7 +107,7 @@ def load_summarizer():
         tokenizer=tokenizer,
         device=-1,
         framework="pt"
-    ))
+    )
 
 # =========================
 # Summarize Long Text
@@ -178,4 +178,5 @@ def main():
 # =========================
 if __name__ == "__main__":
     main()
+
 
