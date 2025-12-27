@@ -1,5 +1,4 @@
-# =========================
-# Imports (ONLY ONCE)
+ # Imports
 # =========================
 import streamlit as st
 from urllib.parse import urlparse, parse_qs
@@ -8,7 +7,7 @@ from transformers import pipeline
 import torch
 import re
 
-# =========================
+
 # MUST BE FIRST STREAMLIT CALL
 # =========================
 st.set_page_config(
@@ -16,37 +15,15 @@ st.set_page_config(
     layout="wide"
 )
 
-def clean_transcript(text, words_per_line=20, lines_per_paragraph=4):
-    # Normalize spaces
-    text = re.sub(r'\s+', ' ', text).strip()
+def clean_transcript(text: str) -> str:
+    return re.sub(r'\s+', ' ', text).strip()
 
-    words = text.split()
-    lines = []
-    paragraphs = []
-
-    for i in range(0, len(words), words_per_line):
-        line = " ".join(words[i:i + words_per_line])
-        lines.append(line.capitalize())
-
-        if len(lines) == lines_per_paragraph:
-            paragraphs.append(" ".join(lines))
-            lines = []
-
-    if lines:
-        paragraphs.append(" ".join(lines))
-
-    return "\n\n".join(paragraphs)
 
 # =========================
 # Helper: Extract Video ID
 # =========================
 def extract_video_id(url: str) -> str:
-    """
-    Extract YouTube video ID from:
-    - https://www.youtube.com/watch?v=VIDEO_ID
-    - https://youtu.be/VIDEO_ID
-    Raises ValueError if video ID cannot be found.
-    """
+  
     parsed = urlparse(url)
 
     # Case 1: Standard YouTube URL
@@ -64,14 +41,11 @@ def extract_video_id(url: str) -> str:
 
     raise ValueError(f"No video id found in URL: {url}")
 
-# =========================
 # Get YouTube Transcript
 # =========================
 @st.cache_data
 def get_youtube_transcript(video_url: str, languages=("en", "ar")) -> str:
-    """
-    Extract and clean the transcript text from a YouTube video URL.
-    """
+   
     video_id = extract_video_id(video_url)
     api = YouTubeTranscriptApi()
 
@@ -87,36 +61,24 @@ def get_youtube_transcript(video_url: str, languages=("en", "ar")) -> str:
     except Exception as e:
         raise Exception(f"Failed to fetch transcript: {e}")
 
-# =========================
+
 # Load Summarization Model
 # =========================
 @st.cache_resource
-@st.cache_resource
 def load_summarizer():
-    from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
-    
-    model_name = "csebuetnlp/mT5_multilingual_XLSum"
-    
-    # Load tokenizer with use_fast=False to avoid SentencePiece conversion issues
-    tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False)
-    model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
-    
     return pipeline(
         task="text2text-generation",
-        model=model,
-        tokenizer=tokenizer,
-        device=-1,
+        model="csebuetnlp/mT5_multilingual_XLSum",
+        tokenizer="csebuetnlp/mT5_multilingual_XLSum",
+        device=-1,      
         framework="pt"
     )
 
-# =========================
 # Summarize Long Text
 # =========================
 def summarize_long_text(text: str, summarizer):
-    """
-    Summarize long text using mT5 by chunking and prefixing.
-    """
-    chunk_size = 512  # SAFE for mT5
+    
+    chunk_size = 512  
     chunks = [text[i:i + chunk_size] for i in range(0, len(text), chunk_size)]
 
     summaries = []
@@ -134,7 +96,6 @@ def summarize_long_text(text: str, summarizer):
     return " ".join(summaries)
 
 
-# =========================
 # Main App
 # =========================
 def main():
@@ -173,10 +134,7 @@ def main():
         except Exception as e:
             st.error(f"❌ Error: {e}")
 
-# =========================
 # Run App
 # =========================
 if __name__ == "__main__":
     main()
-
-
